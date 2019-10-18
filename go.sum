@@ -1,0 +1,4 @@
+9fans.net/go v0.0.2 h1:RYM6lWITV8oADrwLfdzxmt8ucfW6UtP9v1jg4qAbqts=
+9fans.net/go v0.0.2/go.mod h1:lfPdxjq9v8pVQXUMBCx5EO5oLXWQFlKRQgs1kEkjoIM=
+github.com/fhs/gompd/v2 v2.1.1-0.20190619032042-ea1edc3f8d3e h1:MSTZaIOZcwZWL/UqyyAJvbOnPJNlr8eFmMqPMHAy4Ug=
+github.com/fhs/gompd/v2 v2.1.1-0.20190619032042-ea1edc3f8d3e/go.mod h1:nNdZtcpD5VpmzZbRl5rV6RhxeMmAWTxEsSIMBkmMIy4=

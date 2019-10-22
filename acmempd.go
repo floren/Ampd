@@ -63,51 +63,43 @@ func main() {
 		}
 	}()
 
-	for action := range events(w) {
-		switch action {
-		case "Next":
-			client.Next()
-		case "Prev":
-			client.Previous()
-		case "Pause":
-			client.Pause(true)
-		case "UnPause":
-			client.Pause(false)
-		case "Play":
-			client.Play(-1)
-		case "Random":
-			client.Random(!getStatusAttrBool("random"))
-		case "Repeat":
-			client.Repeat(!getStatusAttrBool("repeat"))
-		case "Playlist":
-			go playlistWindow()
+	for e := range w.EventChan() {
+		switch e.C2 {
+		case 'x', 'X': // execute
+			switch string(e.Text) {
+			case "Del":
+				w.Ctl("delete")
+				return
+			case "Next":
+				client.Next()
+			case "Prev":
+				client.Previous()
+			case "Pause":
+				client.Pause(true)
+			case "UnPause":
+				client.Pause(false)
+			case "Play":
+				client.Play(-1)
+			case "Random":
+				client.Random(!getStatusAttrBool("random"))
+			case "Repeat":
+				client.Repeat(!getStatusAttrBool("repeat"))
+			case "Playlist":
+				go playlistWindow()
+			default:
+				// just run the command
+				w.WriteEvent(e)
+			}
+		case 'l', 'L':
+			w.Ctl("clean")
+			// Search for the string
+			go searchWindow(string(e.Text))
 		}
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
 	close(dieChan)
-}
-
-func events(w *acme.Win) <-chan string {
-	c := make(chan string, 10)
-	go func() {
-		for e := range w.EventChan() {
-			switch e.C2 {
-			case 'x', 'X': // execute
-				if string(e.Text) == "Del" {
-					w.Ctl("delete")
-				}
-				w.WriteEvent(e)
-			case 'l', 'L': // look
-				w.Ctl("clean")
-				c <- string(e.Text)
-			}
-		}
-		w.CloseFiles()
-		close(c)
-	}()
-	return c
 }
 
 func updateDisplay(w *acme.Win) {
@@ -164,6 +156,94 @@ func getStatusAttrBool(key string) bool {
 	return false
 }
 
+func searchWindow(query string) {
+	fields := strings.Fields(query)
+	if len(fields) == 0 {
+		return
+	}
+	w, err := acme.New()
+	if err != nil {
+		fmt.Printf("couldn't create new acme window: %v\n", err)
+		return
+	}
+	w.Name("/mpd/Search")
+	w.Ctl("clean")
+
+	var songs []mpd.Attrs
+	if cmd := fields[0]; cmd == "artist" || cmd == "title" || cmd == "album" {
+		// they specified a command to search
+		args := []string{fields[0], strings.TrimSpace(strings.TrimPrefix(query, fields[0]))}
+		songs, err = client.Search(args...)
+		if err != nil {
+			w.Fprintf("body", "%v\n", err)
+			return
+		}
+	} else {
+		// Do a broad search
+		doSearch := func(existing []mpd.Attrs, t string, f string) ([]mpd.Attrs, error) {
+			s, err := client.Search(t, f)
+			return append(existing, s...), err
+		}
+		songs, err = doSearch(songs, "artist", query)
+		if err != nil {
+			w.Fprintf("body", "%v\n", err)
+			return
+		}
+		songs, err = doSearch(songs, "title", query)
+		if err != nil {
+			w.Fprintf("body", "%v\n", err)
+			return
+		}
+		songs, err = doSearch(songs, "album", query)
+		if err != nil {
+			w.Fprintf("body", "%v\n", err)
+			return
+		}
+	}
+
+	for i, s := range songs {
+		w.Fprintf("body", "%d/ %v - %v [%v]\n", i, s["Artist"], s["Title"], s["Album"])
+		w.Ctl("clean")
+	}
+
+	for e := range w.EventChan() {
+		switch e.C2 {
+		case 'x', 'X': // execute
+			txt := string(e.Text)
+			if txt == "Del" {
+				w.Ctl("delete")
+				return
+			} else {
+				w.WriteEvent(e)
+			}
+		case 'l', 'L': // look
+			w.Ctl("clean")
+			// Extract numbers
+			sel := e.Text
+			if len(sel) == 0 {
+				sel = []byte(w.Selection())
+			}
+			scanner := bufio.NewScanner(bytes.NewBuffer(sel))
+			for scanner.Scan() {
+				// grab the ID from the line
+				fields := strings.Fields(scanner.Text())
+				if len(fields) == 0 {
+					continue
+				}
+				idx, err := strconv.Atoi(strings.Trim(fields[0], "/"))
+				if err != nil {
+					continue
+				}
+				if idx < 0 || idx > len(songs)-1 {
+					return
+				}
+				song := songs[idx]
+				client.Add(song["file"])
+			}
+		}
+	}
+}
+
 func playlistWindow() {
 	w, err := acme.New()
 	if err != nil {
@@ -172,6 +252,7 @@ func playlistWindow() {
 	}
 	w.Name("/mpd/CurrentPlaylist")
 	w.Ctl("clean")
+	defer w.CloseFiles()
 
 	w.Fprintf("tag", "Clear Reload WriteBack SavePlaylist")
 
@@ -189,14 +270,13 @@ func playlistWindow() {
 	}
 	populatePlaylist(w)
 
-eventLoop:
 	for e := range w.EventChan() {
 		switch e.C2 {
 		case 'x', 'X': // execute
 			txt := string(e.Text)
 			if txt == "Del" {
 				w.Ctl("delete")
-				break eventLoop
+				return
 			} else if txt == "Clear" {
 				w.Clear()
 				client.Clear()
@@ -250,9 +330,7 @@ eventLoop:
 			}
 		case 'l', 'L': // look
 			w.Ctl("clean")
-			//c <- string(e.Text)
 		}
 	}
-	w.CloseFiles()
 	return
 }

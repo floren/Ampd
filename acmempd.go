@@ -31,6 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	w.Fprintf("tag", "Prev Pause UnPause Play Next")
 	w.Name("/mpd/")
 
 	w.Ctl("clean")

@@ -10,7 +10,14 @@ Note that this is my first Acme application, so take all coding practices with a
 
 ## Basic Controls
 
-The first window which appears is the main control window. The body contains controls for pausing and playing, skipping forward and backward, toggling repeat/random on and off, and opening the current playlist. *Middle-click* (execute) these controls to use them.
+The first window which appears is the main control window. The body contains controls for pausing and playing, skipping forward and backward, toggling repeat/random on and off, and opening the current playlist. *Middle-click* (execute) these controls to use them:
+
+	[Prev] [Pause] [Play] [Next]
+	[Random] [Repeat] [Playlist]
+	Playing: The Who - Put The Money Down ("Odds And Sods")
+	Random: 1, Repeat: 0
+
+Note that the basic playback controls are also available in the tagline of the window, so you can keep the window "minimized" (only the tag visible) most of the time to save space.
 
 ## Playlist Management
 

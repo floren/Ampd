@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"strconv"
@@ -15,13 +16,20 @@ import (
 )
 
 var (
+	fServer   = flag.String("server", "localhost:6600", "MPD server and port")
+	fPassword = flag.String("password", "", "MPD password")
+
 	client *mpd.Client
 	mtx    sync.Mutex
 )
 
 func main() {
 	var err error
-	client, err = mpd.Dial("tcp", "localhost:6600")
+	if *fPassword == "" {
+		client, err = mpd.Dial("tcp", *fServer)
+	} else {
+		client, err = mpd.DialAuthenticated("tcp", *fServer, *fPassword)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

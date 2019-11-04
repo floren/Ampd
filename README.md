@@ -8,6 +8,11 @@ This will drop the Ampd binary into your $GOPATH/bin. Assuming that's in your $P
 
 Note that this is my first Acme application, so take all coding practices with a grain of salt.
 
+## Flags
+
+* `-server <host:port>` sets the MPD server. Default is "localhost:6600".
+* `-password <pw>` sets the MPD password. Note that any user on your machine will be able to see the MPD password in `ps`.
+
 ## Basic Controls
 
 The first window which appears is the main control window. The body contains controls for pausing and playing, skipping forward and backward, toggling repeat/random on and off, and opening the current playlist. *Middle-click* (execute) these controls to use them:

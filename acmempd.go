@@ -202,10 +202,13 @@ func searchWindow(query string) {
 		}
 	}
 
+	var contents string
 	for i, s := range songs {
-		w.Fprintf("body", "%d/ %v - %v [%v]\n", i, s["Artist"], s["Title"], s["Album"])
-		w.Ctl("clean")
+		contents += fmt.Sprintf("%d/ %v - %v [%v]\n", i, s["Artist"], s["Title"], s["Album"])
 	}
+
+	w.Fprintf("body", contents)
+	w.Ctl("clean")
 
 	for e := range w.EventChan() {
 		switch e.C2 {
@@ -264,9 +267,11 @@ func playlistWindow() {
 			w.Fprintf("body", "Couldn't fetch playlist info: %v", err)
 			return
 		}
+		var contents string
 		for _, s := range songs {
-			w.Fprintf("body", "%v %v - %v [%v]\n", s["Id"], s["Artist"], s["Title"], s["Album"])
+			contents += fmt.Sprintf("%v %v - %v [%v]\n", s["Id"], s["Artist"], s["Title"], s["Album"])
 		}
+		w.Fprintf("body", contents)
 		w.Ctl("clean")
 	}
 	populatePlaylist(w)
